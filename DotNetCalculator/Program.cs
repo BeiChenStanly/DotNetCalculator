@@ -1,115 +1,116 @@
 ﻿namespace Calculator
 {
-    static class Calculator
+    public enum Type
     {
-        public static decimal ConductOperation(decimal left, string operation, decimal right = 0)
+        Function,
+        Operator
+    }
+    public class Operation
+    {
+        public int argc;
+        public Type type;
+        public int priority;
+        public Func<decimal[], decimal> conduct;
+        public Operation(int argc, Type type, int priority, Func<decimal[], decimal> conduct)
         {
-            decimal result = 0;
-            if (!isOperator(operation) && !isFunction(operation))
-            {
-                throw new ArgumentException($"Invalid operation: {operation}");
-            }
-            switch (operation)
-            {
-                case "+":
-                    result = left + right;
-                    break;
-                case "-":
-                    result = left - right;
-                    break;
-                case "*":
-                    result = left * right;
-                    break;
-                case "/":
-                    if (right == 0)
-                    {
-                        throw new DivideByZeroException("Cannot divide by zero.");
-                    }
-                    result = left / right;
-                    break;
-                case "^":
-                    result = (decimal)Math.Pow((double)left, (double)right);
-                    break;
-                case "sqrt":
-                    if (left < 0)
-                    {
-                        throw new ArgumentException("Cannot compute square root of a negative number.");
-                    }
-                    result = (decimal)Math.Sqrt((double)left);
-                    break;
-                case "sin":
-                    result = (decimal)Math.Sin((double)left);
-                    break;
-                case "cos":
-                    result = (decimal)Math.Cos((double)left);
-                    break;
-                case "tan":
-                    result = (decimal)Math.Tan((double)left);
-                    break;
-                case "ln":
-                    if (left <= 0)
+            this.argc = argc;
+            this.type = type;
+            this.priority = priority;
+            this.conduct = conduct;
+        }
+    }
+    public static class Calculator
+    {
+        private static Dictionary<string, Operation> Operations = new Dictionary<string, Operation>(){
+            {"sqrt",new Operation(1,Type.Function,3,
+            (argArray)=>{
+                if (argArray[0] < 0)
+                {
+                    throw new ArgumentException("Cannot compute square root of a negative number.");
+                }
+                return (decimal)Math.Sqrt((double)argArray[0]); })},
+            {"sin",new Operation(1,Type.Function,3,
+            (argArray)=>(decimal)Math.Sin((double)argArray[0]))},
+            {"cos",new Operation(1,Type.Function,3,
+            (argArray)=>(decimal)Math.Cos((double)argArray[0]))},
+            {"tan",new Operation(1,Type.Function,3,
+            (argArray)=>(decimal)Math.Tan((double)argArray[0]))},
+            {"ln",new Operation(1,Type.Function,3,
+            (argArray)=>{
+                if (argArray[0] <= 0)
                     {
                         throw new ArgumentException("Cannot compute natural logarithm of a non-positive number.");
                     }
-                    result = (decimal)Math.Log((double)left);
-                    break;
+                return (decimal)Math.Log((double)argArray[0]);
+            })},
+            {"exp",new Operation(1,Type.Function,3,
+            (argArray)=>(decimal)Math.Exp((double)argArray[0]))},
+            {"log",new Operation(2,Type.Function,3,//log(value,base)
+            (argArray)=>(decimal)(Math.Log((double)argArray[0]) / Math.Log((double)argArray[1])))},
+            {"max",new Operation(-1,Type.Function,3,
+            (argArray)=>argArray.Max())},//TODO
+            {"min",new Operation(-1,Type.Function,3,
+            (argArray)=>argArray.Min())},
+            {"+",new Operation(2,Type.Operator,0,
+            (argArray)=>argArray[0] + argArray[1])},
+            {"-",new Operation(2,Type.Operator,0,
+            (argArray)=>argArray[0] - argArray[1])},
+            {"*",new Operation(2,Type.Operator,1,
+            (argArray)=>argArray[0] * argArray[1])},
+            {"/",new Operation(2,Type.Operator,1,
+            (argArray)=>{
+                if (argArray[1] == 0)
+                    {
+                        throw new DivideByZeroException("Cannot divide by zero.");
+                    }
+                return argArray[0] / argArray[1];
+                })},
+            {"^",new Operation(2,Type.Operator,2,
+            (argArray)=>(decimal)Math.Pow((double)argArray[0], (double)argArray[1]))}
+        };
+        private static decimal ConductOperation(string operation, params decimal[] argArray)
+        {
+            if (!Operations.ContainsKey(operation))
+            {
+                throw new ArgumentException($"Invalid operation: {operation}");
             }
-            return result;
+            if (Operations[operation].argc != argArray.Length && Operations[operation].argc != -1)
+            {
+                throw new ArgumentException($"Invalid arg count {argArray.Length} for {operation},expecting {Operations[operation].argc}");
+            }
+            return Operations[operation].conduct(argArray);
         }
-
-        private static bool isOperator(string s)
-        {
-            return s == "+" || s == "-" || s == "*" || s == "/" || s == "^";
-        }
-
-        private static bool isFunction(string s)
-        {
-            return s == "sqrt" || s == "ln" || s == "sin" || s == "cos" || s == "tan";
-        }
-
-        private static decimal CalculateHead(ref Stack<decimal> numbers, ref Stack<string> operators)
+        private static decimal CalculateHead(ref Stack<decimal> numbers, ref Stack<string> operators, ref Stack<int> argLengths)
         {
             string ope = operators.Pop();
-            decimal result = 0;
-            if (isOperator(ope))
+            if (Operations[ope].type == Type.Function && Operations[ope].argc != argLengths.Peek() && Operations[ope].argc != -1)
             {
-                decimal r = numbers.Pop();
-                decimal l = numbers.Pop();
-                result = ConductOperation(l, ope, r);
+                throw new ArgumentException($"Invalid arg count {argLengths.Peek()} for {ope}, expecting{Operations[ope]}");
             }
-            else if (isFunction(ope))
+            Stack<decimal> args = new Stack<decimal>();
+            for (int i = 0; i < (Operations[ope].type == Type.Function ? argLengths.Peek() : Operations[ope].argc); ++i)
             {
-                decimal x = numbers.Pop();
-                result = ConductOperation(x, ope);
+                args.Push(numbers.Pop());
             }
-            return result;
+            if (Operations[ope].type == Type.Function)
+                argLengths.Pop();
+            return ConductOperation(ope, args.ToArray());
         }
 
         private static int GetPriority(string ope)
         {
-            if (isFunction(ope))
+            if (ope == "(") return -1;
+            if (!Operations.ContainsKey(ope))
             {
-                return 3;
+                throw new ArgumentException("Unknown priority for " + ope);
             }
-            switch (ope)
-            {
-                case "+":
-                case "-":
-                    return 0;
-                case "*":
-                case "/":
-                    return 1;
-                case "^":
-                    return 2;
-                case "(":
-                    return -1;
-                default:
-                    throw new ArgumentException("Unknown priority for " + ope);
-            }
+            return Operations[ope].priority;
         }
-
-        private static List<string> DivideIntoTokens(string s)
+        public static decimal Calculate(string s)
         {
+            Stack<decimal> numbers = new Stack<decimal>();
+            Stack<string> operators = new Stack<string>();
+            Stack<int> argCountStack = new Stack<int>();
             List<string> tokens = ["("];
             int i = 0;
             while (i < s.Length)
@@ -124,13 +125,13 @@
                     }
                     tokens.Add(temp);
                 }
-                else if (s[i] == '-' && tokens[tokens.Count - 1] == "(")
+                else if (s[i] == '-' && "(,".Contains(tokens[tokens.Count - 1]))
                 {
                     tokens.Add("-1");
                     tokens.Add("*");
                     ++i;
                 }
-                else if (isOperator("" + s[i]) || s[i] == ')' || s[i] == '(')
+                else if ("+-*/^(),".Contains(s[i]))
                 {
                     tokens.Add("" + s[i++]);
                 }
@@ -149,40 +150,57 @@
                 }
             }
             tokens.Add(")");
-            return tokens;
-        }
-
-        public static decimal Calculate(string s)
-        {
-            Stack<decimal> numbers = new Stack<decimal>();
-            Stack<string> operators = new Stack<string>();
-            List<string> tokens = DivideIntoTokens(s);
-            for (int i = 0; i < tokens.Count; ++i)
+            foreach (string token in tokens)
             {
-                if (tokens[i] == "(")
-                {
-                    operators.Push(tokens[i]);
-                }
-                else if (tokens[i] == ")")
+                if (token == ",")
                 {
                     while (operators.Peek() != "(")
                     {
-                        numbers.Push(CalculateHead(ref numbers, ref operators));
+                        numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
+                    }
+                    argCountStack.Push(argCountStack.Pop() + 1);
+                }
+                else if (token == "(")
+                {
+                    operators.Push(token);
+                }
+                else if (token == ")")
+                {
+                    while (operators.Peek() != "(")
+                    {
+                        numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
                     }
                     operators.Pop();
-                }
-                else if (isOperator(tokens[i]) || isFunction(tokens[i]))
-                {
-                    while (GetPriority(tokens[i]) <= GetPriority(operators.Peek()) &&
-                    !(tokens[i] == "^" && GetPriority(tokens[i]) == GetPriority(operators.Peek())))
+                    if (operators.Count > 0 && Operations.ContainsKey(operators.Peek()) && Operations[operators.Peek()].type == Type.Function)
                     {
-                        numbers.Push(CalculateHead(ref numbers, ref operators));
+                        numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
                     }
-                    operators.Push(tokens[i]);
+                }
+                else if (Operations.ContainsKey(token))
+                {
+                    if (Operations[token].type == Type.Operator)
+                    {
+                        while (GetPriority(token) <= GetPriority(operators.Peek()) &&
+                        !(token == "^" && GetPriority(token) == GetPriority(operators.Peek())))
+                        {
+                            numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
+                        }
+                        operators.Push(token);
+                    }
+                    else if (Operations[token].type == Type.Function)
+                    {
+                        while (GetPriority(token) <= GetPriority(operators.Peek()) &&
+                        !(token == "^" && GetPriority(token) == GetPriority(operators.Peek())))
+                        {
+                            numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
+                        }
+                        operators.Push(token);
+                        argCountStack.Push(1);
+                    }
                 }
                 else
                 {
-                    numbers.Push(decimal.Parse(tokens[i]));
+                    numbers.Push(decimal.Parse(token));
                 }
             }
             return numbers.Peek();
