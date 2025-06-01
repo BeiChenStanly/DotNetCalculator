@@ -1,10 +1,7 @@
-﻿
-namespace Calculator
+﻿namespace Calculator
 {
     static class Calculator
     {
-        private static Stack<decimal> numbers = new Stack<decimal>();
-        private static Stack<string> operators = new Stack<string>();
         public static decimal ConductOperation(decimal left, string operation, decimal right = 0)
         {
             decimal result = 0;
@@ -70,7 +67,7 @@ namespace Calculator
             return s == "sqrt" || s == "ln" || s == "sin" || s == "cos" || s == "tan";
         }
 
-        private static decimal CalculateHead()
+        private static decimal CalculateHead(ref Stack<decimal> numbers, ref Stack<string> operators)
         {
             string ope = operators.Pop();
             decimal result = 0;
@@ -104,14 +101,16 @@ namespace Calculator
                     return 1;
                 case "^":
                     return 2;
+                case "(":
+                    return -1;
                 default:
-                    throw new ArgumentException("unknown priority");
+                    throw new ArgumentException("Unknown priority for " + ope);
             }
         }
 
-        private static void DivideIntoTokens(string s, ref List<string> tokens)
+        private static List<string> DivideIntoTokens(string s)
         {
-            tokens.Add("(");
+            List<string> tokens = ["("];
             int i = 0;
             while (i < s.Length)
             {
@@ -124,6 +123,12 @@ namespace Calculator
                         temp += s[i++];
                     }
                     tokens.Add(temp);
+                }
+                else if (s[i] == '-' && tokens[tokens.Count - 1] == "(")
+                {
+                    tokens.Add("-1");
+                    tokens.Add("*");
+                    ++i;
                 }
                 else if (isOperator("" + s[i]) || s[i] == ')' || s[i] == '(')
                 {
@@ -144,58 +149,43 @@ namespace Calculator
                 }
             }
             tokens.Add(")");
+            return tokens;
         }
 
         public static decimal Calculate(string s)
         {
-            List<string> tokens = new List<string>();
-            DivideIntoTokens(s, ref tokens);
+            Stack<decimal> numbers = new Stack<decimal>();
+            Stack<string> operators = new Stack<string>();
+            List<string> tokens = DivideIntoTokens(s);
             for (int i = 0; i < tokens.Count; ++i)
             {
-                DealWith(ref tokens, i);
-            }
-            return numbers.Peek();
-        }
-
-        private static void DealWith(ref List<string> tokens, int i)
-        {
-            if (tokens[i] == "(")
-            {
-                operators.Push(tokens[i]);
-            }
-            else if (tokens[i] == ")")
-            {
-                if (operators.Peek() == "(")
+                if (tokens[i] == "(")
                 {
+                    operators.Push(tokens[i]);
+                }
+                else if (tokens[i] == ")")
+                {
+                    while (operators.Peek() != "(")
+                    {
+                        numbers.Push(CalculateHead(ref numbers, ref operators));
+                    }
                     operators.Pop();
                 }
-                else
+                else if (isOperator(tokens[i]) || isFunction(tokens[i]))
                 {
-                    numbers.Push(CalculateHead());
-                    DealWith(ref tokens, i);//递归
-                }
-            }
-            else if (isOperator(tokens[i]) || isFunction(tokens[i]))
-            {
-                if (operators.Peek() == "(")
-                {
-                    operators.Push(tokens[i]);
-                }
-                else if (GetPriority(tokens[i]) > GetPriority(operators.Peek())
-                || (tokens[i] == "^" && GetPriority(tokens[i]) == GetPriority(operators.Peek())))
-                {
+                    while (GetPriority(tokens[i]) <= GetPriority(operators.Peek()) &&
+                    !(tokens[i] == "^" && GetPriority(tokens[i]) == GetPriority(operators.Peek())))
+                    {
+                        numbers.Push(CalculateHead(ref numbers, ref operators));
+                    }
                     operators.Push(tokens[i]);
                 }
                 else
                 {
-                    numbers.Push(CalculateHead());
-                    DealWith(ref tokens, i);//递归
+                    numbers.Push(decimal.Parse(tokens[i]));
                 }
             }
-            else
-            {
-                numbers.Push(decimal.Parse(tokens[i]));
-            }
+            return numbers.Peek();
         }
     }
     internal class Program
@@ -209,13 +199,21 @@ namespace Calculator
             {
                 Console.Write("Enter an expression:");
                 input = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(input))
+                if (string.IsNullOrWhiteSpace(input) || input.Contains("exit") || input.Contains("quit"))
                 {
-                    Console.WriteLine("Exiting the calculator. Goodbye!");
                     break;
                 }
-                Console.WriteLine(input + '=' + Calculator.Calculate(input));
+                try
+                {
+                    Console.WriteLine(input + '=' + Calculator.Calculate(input));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
         }
     }
 }
