@@ -1,4 +1,6 @@
-﻿namespace Calculator
+﻿using ExtendedNumerics;
+
+namespace Calculator
 {
     public enum Type
     {
@@ -10,8 +12,8 @@
         public int argc;
         public Type type;
         public int priority;
-        public Func<decimal[], decimal> conduct;
-        public Operation(int argc, Type type, int priority, Func<decimal[], decimal> conduct)
+        public Func<BigDecimal[], BigDecimal> conduct;
+        public Operation(int argc, Type type, int priority, Func<BigDecimal[], BigDecimal> conduct)
         {
             this.argc = argc;
             this.type = type;
@@ -28,47 +30,79 @@
                 {
                     throw new ArgumentException("Cannot compute square root of a negative number.");
                 }
-                return (decimal)Math.Sqrt((double)argArray[0]); })},
+                return BigDecimal.SquareRoot(argArray[0],BigDecimal.Precision); })},
             {"sin",new Operation(1,Type.Function,3,
-            (argArray)=>(decimal)Math.Sin((double)argArray[0]))},
+            (argArray)=>BigDecimal.Sin(argArray[0],BigDecimal.Precision))},
             {"cos",new Operation(1,Type.Function,3,
-            (argArray)=>(decimal)Math.Cos((double)argArray[0]))},
+            (argArray)=>BigDecimal.Cos(argArray[0],BigDecimal.Precision))},
             {"tan",new Operation(1,Type.Function,3,
-            (argArray)=>(decimal)Math.Tan((double)argArray[0]))},
-            {"ln",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Tan(argArray[0],BigDecimal.Precision))},
+            {"cot",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Cot(argArray[0],BigDecimal.Precision))},
+            {"sec",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Sec(argArray[0],BigDecimal.Precision))},
+            {"csc",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Csc(argArray[0],BigDecimal.Precision))},
+            { "ln",new Operation(1,Type.Function,3,
             (argArray)=>{
                 if (argArray[0] <= 0)
                     {
                         throw new ArgumentException("Cannot compute natural logarithm of a non-positive number.");
                     }
-                return (decimal)Math.Log((double)argArray[0]);
+                return BigDecimal.Ln(argArray[0]);
             })},
             {"exp",new Operation(1,Type.Function,3,
-            (argArray)=>(decimal)Math.Exp((double)argArray[0]))},
+            (argArray)=>BigDecimal.Exp(argArray[0],BigDecimal.Precision))},
             {"log",new Operation(2,Type.Function,3,//log(value,base)
-            (argArray)=>(decimal)(Math.Log((double)argArray[0]) / Math.Log((double)argArray[1])))},
+            (argArray)=>BigDecimal.Divide( BigDecimal.Ln(argArray[0],BigDecimal.Precision), BigDecimal.Ln(argArray[1],BigDecimal.Precision),BigDecimal.Precision))},
             {"max",new Operation(-1,Type.Function,3,
-            (argArray)=>argArray.Max())},//TODO
+            (argArray)=>argArray.Max())},
             {"min",new Operation(-1,Type.Function,3,
             (argArray)=>argArray.Min())},
             {"+",new Operation(2,Type.Operator,0,
             (argArray)=>argArray[0] + argArray[1])},
             {"-",new Operation(2,Type.Operator,0,
             (argArray)=>argArray[0] - argArray[1])},
-            {"*",new Operation(2,Type.Operator,1,
+            { "*",new Operation(2,Type.Operator,1,
             (argArray)=>argArray[0] * argArray[1])},
-            {"/",new Operation(2,Type.Operator,1,
+            { "/",new Operation(2,Type.Operator,1,
             (argArray)=>{
                 if (argArray[1] == 0)
                     {
                         throw new DivideByZeroException("Cannot divide by zero.");
                     }
-                return argArray[0] / argArray[1];
+                return BigDecimal.Divide( argArray[0] , argArray[1],BigDecimal.Precision);
                 })},
             {"^",new Operation(2,Type.Operator,2,
-            (argArray)=>(decimal)Math.Pow((double)argArray[0], (double)argArray[1]))}
+            (argArray)=>BigDecimal.Pow(argArray[0],argArray[1],BigDecimal.Precision))},
+            {"arcsin",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arcsin(argArray[0],BigDecimal.Precision))},
+            {"arccos",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arccos(argArray[0],BigDecimal.Precision))},
+            {"arctan",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arctan(argArray[0],BigDecimal.Precision))},
+            {"arccot",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arccot(argArray[0],BigDecimal.Precision))},
+            {"arcsec",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arcsec(argArray[0],BigDecimal.Precision))},
+            {"arccsc",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Arccsc(argArray[0],BigDecimal.Precision))},
+            { "sinh",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Sinh(argArray[0],BigDecimal.Precision))},
+            { "csch",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Csch(argArray[0],BigDecimal.Precision))},
+            { "cosh",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Cosh(argArray[0],BigDecimal.Precision))},
+            { "sech",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Sech(argArray[0],BigDecimal.Precision))},
+            { "tanh",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Tanh(argArray[0],BigDecimal.Precision))},
+            { "coth",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Coth(argArray[0],BigDecimal.Precision))},
+            { "abs",new Operation(1,Type.Function,3,
+            (argArray)=>BigDecimal.Abs(argArray[0]))}
         };
-        private static decimal ConductOperation(string operation, params decimal[] argArray)
+        private static BigDecimal ConductOperation(string operation, params BigDecimal[] argArray)
         {
             if (!Operations.ContainsKey(operation))
             {
@@ -80,14 +114,14 @@
             }
             return Operations[operation].conduct(argArray);
         }
-        private static decimal CalculateHead(ref Stack<decimal> numbers, ref Stack<string> operators, ref Stack<int> argLengths)
+        private static BigDecimal CalculateHead(ref Stack<BigDecimal> numbers, ref Stack<string> operators, ref Stack<int> argLengths)
         {
             string ope = operators.Pop();
             if (Operations[ope].type == Type.Function && Operations[ope].argc != argLengths.Peek() && Operations[ope].argc != -1)
             {
-                throw new ArgumentException($"Invalid arg count {argLengths.Peek()} for {ope}, expecting{Operations[ope]}");
+                throw new ArgumentException($"Invalid arg count {argLengths.Peek()} for {ope}, expecting {Operations[ope].argc}");
             }
-            Stack<decimal> args = new Stack<decimal>();
+            Stack<BigDecimal> args = new Stack<BigDecimal>();
             for (int i = 0; i < (Operations[ope].type == Type.Function ? argLengths.Peek() : Operations[ope].argc); ++i)
             {
                 args.Push(numbers.Pop());
@@ -106,9 +140,9 @@
             }
             return Operations[ope].priority;
         }
-        public static decimal Calculate(string s)
+        public static BigDecimal Calculate(string s)
         {
-            Stack<decimal> numbers = new Stack<decimal>();
+            Stack<BigDecimal> numbers = new Stack<BigDecimal>();
             Stack<string> operators = new Stack<string>();
             Stack<int> argCountStack = new Stack<int>();
             List<string> tokens = ["("];
@@ -200,7 +234,12 @@
                 }
                 else
                 {
-                    numbers.Push(decimal.Parse(token));
+                    if (token == "pi" || token == "Pi" || token == "PI")
+                        numbers.Push(BigDecimal.Pi);
+                    else if (token == "e" || token == "E")
+                        numbers.Push(BigDecimal.E);
+                    else
+                        numbers.Push(BigDecimal.Parse(token));
                 }
             }
             return numbers.Peek();
@@ -215,6 +254,8 @@
             string? input;
             while (true)
             {
+                BigDecimal.Precision = 100;
+                BigDecimal.AlwaysTruncate = true;
                 Console.Write("Enter an expression:");
                 input = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(input) || input.Contains("exit") || input.Contains("quit"))
