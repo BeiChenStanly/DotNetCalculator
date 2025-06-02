@@ -2,18 +2,18 @@
 
 namespace Calculator
 {
-    public enum Type
+    enum OperationType
     {
         Function,
         Operator
     }
-    public class Operation
+    class Operation
     {
         public int argc;
-        public Type type;
+        public OperationType type;
         public int priority;
         public Func<BigDecimal[], BigDecimal> conduct;
-        public Operation(int argc, Type type, int priority, Func<BigDecimal[], BigDecimal> conduct)
+        public Operation(int argc, OperationType type, int priority, Func<BigDecimal[], BigDecimal> conduct)
         {
             this.argc = argc;
             this.type = type;
@@ -24,26 +24,26 @@ namespace Calculator
     public static class Calculator
     {
         private static Dictionary<string, Operation> Operations = new Dictionary<string, Operation>(){
-            {"sqrt",new Operation(1,Type.Function,3,
+            {"sqrt",new Operation(1,OperationType.Function,3,
             (argArray)=>{
                 if (argArray[0] < 0)
                 {
                     throw new ArgumentException("Cannot compute square root of a negative number.");
                 }
                 return BigDecimal.SquareRoot(argArray[0],BigDecimal.Precision); })},
-            {"sin",new Operation(1,Type.Function,3,
+            {"sin",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Sin(argArray[0],BigDecimal.Precision))},
-            {"cos",new Operation(1,Type.Function,3,
+            {"cos",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Cos(argArray[0],BigDecimal.Precision))},
-            {"tan",new Operation(1,Type.Function,3,
+            {"tan",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Tan(argArray[0],BigDecimal.Precision))},
-            {"cot",new Operation(1,Type.Function,3,
+            {"cot",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Cot(argArray[0],BigDecimal.Precision))},
-            {"sec",new Operation(1,Type.Function,3,
+            {"sec",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Sec(argArray[0],BigDecimal.Precision))},
-            {"csc",new Operation(1,Type.Function,3,
+            {"csc",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Csc(argArray[0],BigDecimal.Precision))},
-            { "ln",new Operation(1,Type.Function,3,
+            { "ln",new Operation(1,OperationType.Function,3,
             (argArray)=>{
                 if (argArray[0] <= 0)
                     {
@@ -51,21 +51,21 @@ namespace Calculator
                     }
                 return BigDecimal.Ln(argArray[0]);
             })},
-            {"exp",new Operation(1,Type.Function,3,
+            {"exp",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Exp(argArray[0],BigDecimal.Precision))},
-            {"log",new Operation(2,Type.Function,3,//log(value,base)
+            {"log",new Operation(2,OperationType.Function,3,//log(value,base)
             (argArray)=>BigDecimal.Divide( BigDecimal.Ln(argArray[0],BigDecimal.Precision), BigDecimal.Ln(argArray[1],BigDecimal.Precision),BigDecimal.Precision))},
-            {"max",new Operation(-1,Type.Function,3,
+            {"max",new Operation(-1,OperationType.Function,3,
             (argArray)=>argArray.Max())},
-            {"min",new Operation(-1,Type.Function,3,
+            {"min",new Operation(-1,OperationType.Function,3,
             (argArray)=>argArray.Min())},
-            {"+",new Operation(2,Type.Operator,0,
+            {"+",new Operation(2,OperationType.Operator,0,
             (argArray)=>argArray[0] + argArray[1])},
-            {"-",new Operation(2,Type.Operator,0,
+            {"-",new Operation(2,OperationType.Operator,0,
             (argArray)=>argArray[0] - argArray[1])},
-            { "*",new Operation(2,Type.Operator,1,
+            { "*",new Operation(2,OperationType.Operator,1,
             (argArray)=>argArray[0] * argArray[1])},
-            { "/",new Operation(2,Type.Operator,1,
+            { "/",new Operation(2,OperationType.Operator,1,
             (argArray)=>{
                 if (argArray[1] == 0)
                     {
@@ -73,35 +73,35 @@ namespace Calculator
                     }
                 return BigDecimal.Divide( argArray[0] , argArray[1],BigDecimal.Precision);
                 })},
-            {"^",new Operation(2,Type.Operator,2,
+            {"^",new Operation(2,OperationType.Operator,2,
             (argArray)=>BigDecimal.Pow(argArray[0],argArray[1],BigDecimal.Precision))},
-            {"arcsin",new Operation(1,Type.Function,3,
+            {"arcsin",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arcsin(argArray[0],BigDecimal.Precision))},
-            {"arccos",new Operation(1,Type.Function,3,
+            {"arccos",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arccos(argArray[0],BigDecimal.Precision))},
-            {"arctan",new Operation(1,Type.Function,3,
+            {"arctan",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arctan(argArray[0],BigDecimal.Precision))},
-            {"arccot",new Operation(1,Type.Function,3,
+            {"arccot",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arccot(argArray[0],BigDecimal.Precision))},
-            {"arcsec",new Operation(1,Type.Function,3,
+            {"arcsec",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arcsec(argArray[0],BigDecimal.Precision))},
-            {"arccsc",new Operation(1,Type.Function,3,
+            {"arccsc",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Arccsc(argArray[0],BigDecimal.Precision))},
-            { "sinh",new Operation(1,Type.Function,3,
+            { "sinh",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Sinh(argArray[0],BigDecimal.Precision))},
-            { "csch",new Operation(1,Type.Function,3,
+            { "csch",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Csch(argArray[0],BigDecimal.Precision))},
-            { "cosh",new Operation(1,Type.Function,3,
+            { "cosh",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Cosh(argArray[0],BigDecimal.Precision))},
-            { "sech",new Operation(1,Type.Function,3,
+            { "sech",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Sech(argArray[0],BigDecimal.Precision))},
-            { "tanh",new Operation(1,Type.Function,3,
+            { "tanh",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Tanh(argArray[0],BigDecimal.Precision))},
-            { "coth",new Operation(1,Type.Function,3,
+            { "coth",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Coth(argArray[0],BigDecimal.Precision))},
-            { "abs",new Operation(1,Type.Function,3,
+            { "abs",new Operation(1,OperationType.Function,3,
             (argArray)=>BigDecimal.Abs(argArray[0]))},
-            {"setprecision",new Operation(1,Type.Function,3,
+            {"setprecision",new Operation(1,OperationType.Function,3,
             (argArray)=>{
                 BigDecimal.Precision = (int)argArray[0];
                 return BigDecimal.Precision;
@@ -122,16 +122,16 @@ namespace Calculator
         private static BigDecimal CalculateHead(ref Stack<BigDecimal> numbers, ref Stack<string> operators, ref Stack<int> argLengths)
         {
             string ope = operators.Pop();
-            if (Operations[ope].type == Type.Function && Operations[ope].argc != argLengths.Peek() && Operations[ope].argc != -1)
+            if (Operations[ope].type == OperationType.Function && Operations[ope].argc != argLengths.Peek() && Operations[ope].argc != -1)
             {
                 throw new ArgumentException($"Invalid arg count {argLengths.Peek()} for {ope}, expecting {Operations[ope].argc}");
             }
             Stack<BigDecimal> args = new Stack<BigDecimal>();
-            for (int i = 0; i < (Operations[ope].type == Type.Function ? argLengths.Peek() : Operations[ope].argc); ++i)
+            for (int i = 0; i < (Operations[ope].type == OperationType.Function ? argLengths.Peek() : Operations[ope].argc); ++i)
             {
                 args.Push(numbers.Pop());
             }
-            if (Operations[ope].type == Type.Function)
+            if (Operations[ope].type == OperationType.Function)
                 argLengths.Pop();
             return ConductOperation(ope, args.ToArray());
         }
@@ -210,14 +210,14 @@ namespace Calculator
                         numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
                     }
                     operators.Pop();
-                    if (operators.Count > 0 && Operations.ContainsKey(operators.Peek()) && Operations[operators.Peek()].type == Type.Function)
+                    if (operators.Count > 0 && Operations.ContainsKey(operators.Peek()) && Operations[operators.Peek()].type == OperationType.Function)
                     {
                         numbers.Push(CalculateHead(ref numbers, ref operators, ref argCountStack));
                     }
                 }
                 else if (Operations.ContainsKey(token))
                 {
-                    if (Operations[token].type == Type.Operator)
+                    if (Operations[token].type == OperationType.Operator)
                     {
                         while (GetPriority(token) <= GetPriority(operators.Peek()) &&
                         !(token == "^" && GetPriority(token) == GetPriority(operators.Peek())))
@@ -226,7 +226,7 @@ namespace Calculator
                         }
                         operators.Push(token);
                     }
-                    else if (Operations[token].type == Type.Function)
+                    else if (Operations[token].type == OperationType.Function)
                     {
                         while (GetPriority(token) <= GetPriority(operators.Peek()) &&
                         !(token == "^" && GetPriority(token) == GetPriority(operators.Peek())))
