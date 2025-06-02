@@ -100,7 +100,12 @@ namespace Calculator
             { "coth",new Operation(1,Type.Function,3,
             (argArray)=>BigDecimal.Coth(argArray[0],BigDecimal.Precision))},
             { "abs",new Operation(1,Type.Function,3,
-            (argArray)=>BigDecimal.Abs(argArray[0]))}
+            (argArray)=>BigDecimal.Abs(argArray[0]))},
+            {"setprecision",new Operation(1,Type.Function,3,
+            (argArray)=>{
+                BigDecimal.Precision = (int)argArray[0];
+                return BigDecimal.Precision;
+            })}
         };
         private static BigDecimal ConductOperation(string operation, params BigDecimal[] argArray)
         {
@@ -254,7 +259,6 @@ namespace Calculator
             string? input;
             while (true)
             {
-                BigDecimal.Precision = 100;
                 BigDecimal.AlwaysTruncate = true;
                 Console.Write("Enter an expression:");
                 input = Console.ReadLine();
